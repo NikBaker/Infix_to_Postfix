@@ -5,13 +5,8 @@
 #include <map>
 #include <set>
 #include <stdlib.h>
-using namespace std;
 
-struct MyEl
-{
-    char for_char;
-    double for_const = 0;
-};
+using namespace std;
 
 // Приоритеты операций
 int Priority(const char& ch) {
@@ -25,6 +20,7 @@ int Priority(const char& ch) {
     }
 }
 
+// Операции
 double Operation(const char& ch, const double& a, const double& b) {
     if (ch == '+') {
         return a + b;
@@ -45,185 +41,190 @@ double Operation(const char& ch, const double& a, const double& b) {
     }
 }
 
-
 double UnMinus(const double& a) {
     return -a;
 }
 
-int main()
-{
-    // ОПЕРАНДАМИ МОГУТ БЫТЬ ЛИБО БУКВЫ, ЛИБО ВЕЩЕСТВЕННЫЕ КОНСТАНТЫ
+bool Is_number(const char& ch) {
+    return (ch >= '0' && ch <= '9');
+}
 
-    string stack = "";
-    string postfix = "";
+bool Is_leter(const char& ch) {
+    return (ch >= 'a' && ch <= 'z' || ch >= 'A' && ch <= 'Z');
+}
 
-    vector<MyEl> postfix_my;
+bool Is_Unar_Minus(string& in, int& pos) {
+    return (in[pos] == in[0] || in[pos - 1] == '(' || in[pos - 1] == '+' || in[pos - 1] == '-' || in[pos - 1] == '*' || in[pos - 1] == '/');
+}
 
-    string input= "";
+bool Is_operation(const char& ch) {
+    return (ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '~');
+}
 
-    cout << "Enter the expression: " << endl;
-    cin >> input;
-
-    map<char, double> Map_for_chars;    // map<string, double> Map_for_chars???;
-    set<char> Set_for_chars;
-    
-    // Выделим из входной строки константы и добавим их через цифры в мапу
-    string sub;
-    int count_of_sym = 0; // количество символов в подстроке
-    int number_of_const = 0; // номер константы
-    for (int i = 0; i < input.size(); ++i) {
-        if (input[i] >= '0' && input[i] <= '9') {  //  если встретили цифру
-            sub.push_back(input[i]);
-            int number_of_dots = 0;
-            count_of_sym++;
-            i--; // возвращаемся на позицию до начала константы
-            int j = i + 2; // новый индекс для добавления оставшейся части константы в подстроку
-            while (input[j] == '.' || (input[j] >= '0' && input[j] <= '9')) {
-                if (input[j] == '.') {
-                    number_of_dots++;
-                }
-                sub.push_back(input[j]);
-                j++;
-                count_of_sym++;
-            }
-            if (number_of_dots > 1) {
-                cout << "Wrong format" << endl;
-                return 3;
-            }
-
-            input = input.erase(i + 1, count_of_sym); // удаляем из строки подстроку с константой
-            number_of_const++;
-            input.insert(i + 1, to_string(number_of_const)); // добавляем в строку вместо константы её идентификатор (номер константы)
-
-            string s = to_string(number_of_const);
-            // s[0] - это только первый символ. Если номер константы будет равен 12, то s[0] = 1 и произойдет коллизия с 1!!!
-            Map_for_chars[s[0]] = atof(sub.c_str()); // добавляем в мапу по нашему идентификатору значение константы
-
-            sub = "";
-            count_of_sym = 0;
-            i+=2; // перемещаемся на позицию после установленного идентификатора
-
-        }
+bool Add_number_to_Postfix(string& in, string& sub, int& pos, vector<string>& postfix) {
+    if (Is_leter(in[pos + 1])) {    // проверка на правильность введенного идентификатора
+        return false;
     }
+    else {
+        sub.push_back(in[pos]);
+        int number_of_dots = 0;
 
-    // Заполняем множество уникальных операндов нашего выражения
-    for (int i = 0; i < input.size(); ++i) {
-        if (input[i] >= 'a' && input[i] <= 'z' || input[i] >= 'A' && input[i] <= 'Z') {
-            Set_for_chars.insert(input[i]);
+        int j = pos + 1;
+        while (in[j] == '.' || (in[j] >= '0' && in[j] <= '9')) {
+            if (in[j] == '.') {
+                number_of_dots++;
+            }
+            sub.push_back(in[j]);
+            j++;
         }
+        if (number_of_dots > 1) {
+            //cout << "Wrong format" << endl;
+            return false;           // Выход
+        }
+        // Добавляем константу в формируемую запись
+        postfix.push_back(sub);
+        sub = "";
+        pos = j - 1; // перемещаемся на позицию после константы
+        return true;
+    }   
+}
+
+void Add_variable_to_Postfix(string& in, string& sub, int& pos, vector<string>& postfix) {
+    sub.push_back(in[pos]);
+    int j = pos + 1;
+    while ((in[j] >= '0' && in[j] <= '9') || (in[j] >= 'a' && in[j] <= 'z') || (in[j] >= 'A' && in[j] <= 'Z')) {
+        sub.push_back(in[j]);
+        j++;
     }
+    // Добавляем значения переменных в формируемую запись
+    double temp;
+    cout << "Enter the value for " << sub << ": ";
+    cin >> temp;
+    postfix.push_back(to_string(temp));
+    sub = "";
+    pos = j - 1; // перемещаемся на позицию после переменной
+}
 
-    double tempo = 0;
-    // Вводим значения для операндов нашего выражения
-    for (const auto& oper : Set_for_chars) {
-        cout << "Enter the value for " << oper << ": ";
-        cin >> tempo;
-        cout << endl;
-        Map_for_chars[oper] = tempo;
+void Add_operation(string& in, vector<string>& postfix, string& st, int& pos) {
+    auto it11 = find(st.begin(), st.end(), '~');
+    auto it1 = find(st.begin(), st.end(), '+');
+    auto it2 = find(st.begin(), st.end(), '-');
+    auto it3 = find(st.begin(), st.end(), '*');
+    auto it4 = find(st.begin(), st.end(), '/');
+
+    // 2.a) Если в стеке нет операций или верхним элементом стека является открывающая скобка, операция кладется в стек;
+    if ((it1 == st.end() && it2 == st.end() && it3 == st.end() && it4 == st.end() && it11 == st.end()) || (st[st.size() - 1] == '(')) {
+        st.push_back(in[pos]);
     }
-    
-    for (auto it = begin(input); it != end(input); ++it) {
-        auto c = *it;
-        if (c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '1' && c <= '9') { // 1. Константы и переменные кладутся в формируемую запись
-            postfix.push_back(c);
-            continue;
-        }
-
-        if (c == '(') { // 3. Открывающая скобка кладется в стек.
-            stack.push_back(c);
-            continue;
-        }
-
-        if (c == '-') {
-            if (it == begin(input) || *prev(it) == '(' || *prev(it) == '+' || *prev(it) == '-' || *prev(it) == '*' || *prev(it) == '/') {
-                c = '~';
+    // 2.b) Если новая операция имеет больший приоритет, чем верхняя операция в стеке, то новая операция кладется в стек;
+    else if (Priority(in[pos]) > Priority(st[st.size() - 1])) {
+        st.push_back(in[pos]);
+    }
+    // 2.c) Если новая операция имеет меньший или равный приоритет, чем верхняя операция в стеке, то операции, находящиеся в стеке,
+    //      до ближайшей открывающей скобки или до операции с приоритетом меньшим, чем у новой операции, перекладываются в формируемую запись,
+    //      а новая операция кладется в стек.
+    else {
+        for (int j = st.size() - 1; j >= 0; --j) {
+            if (st[j] != '(' && (Priority(st[j]) >= Priority(in[pos]))) {
+                postfix.push_back(string(1, st[j]));
+                st = st.erase(j, 1);
             }
-        }
-        
-        if (c == '+' || c == '-' || c == '*' || c == '/' || c == '~') { // 2. При появлении операции в исходном массиве :
-
-            auto it11 = find(stack.begin(), stack.end(), '~');
-            auto it1 = find(stack.begin(), stack.end(), '+');
-            auto it2 = find(stack.begin(), stack.end(), '-');
-            auto it3 = find(stack.begin(), stack.end(), '*');
-            auto it4 = find(stack.begin(), stack.end(), '/');
-
-            // 2.a) Если в стеке нет операций или верхним элементом стека является открывающая скобка, операция кладется в стек;
-            if ((it1 == stack.end() && it2 == stack.end() && it3 == stack.end() && it4 == stack.end() && it11 == stack.end()) || (stack[stack.size() - 1] == '(')) {
-                stack.push_back(c);
-            }
-            // 2.b) Если новая операция имеет больший приоритет, чем верхняя операция в стеке, то новая операция кладется в стек;
-            else if (Priority(c) > Priority(stack[stack.size() - 1])) { // (c == '*' || c == '/') && (stack[stack.size() - 1] == '+' || stack[stack.size() - 1] == '-')
-                stack.push_back(c);
-            }
-            // 2.c) Если новая операция имеет меньший или равный приоритет, чем верхняя операция в стеке, то операции, находящиеся в стеке,
-            //      до ближайшей открывающей скобки или до операции с приоритетом меньшим, чем у новой операции, перекладываются в формируемую запись,
-            //      а новая операция кладется в стек.
             else {
-                    for (int i = stack.size() - 1; i >= 0; --i) {
-                        if (stack[i] != '(' && Priority(stack[i]) >= Priority(c)) { // && (i != 0)
-                            postfix.push_back(stack[i]);
-                            stack = stack.erase(i, 1);
-                        }
-                        else {
-                            break;
-                        }
-                    }
-               
-                stack.push_back(c);
-
+                break;
             }
-            continue;
         }
+        st.push_back(in[pos]);
+    }
+}
 
+bool Push(string& st, vector<string>& postfix) {
+    auto it = find(st.begin(), st.end(), '(');
+
+    if (it != st.end()) {
+        for (int i = st.size() - 1; i >= 0; --i) {
+            if (st[i] != '(') {
+                postfix.push_back(string(1, st[i]));
+            }
+            else {
+                st = st.erase(i, st.size() - i);
+                break;
+            }
+        }
+        return true;
+    }
+    // Если стек закончился до того, как был встречен токен открывающая скобка, то в выражении пропущена скобка.
+    else {
+        //cout << "Wrong expression" << endl;
+        return false;
+    }
+}
+
+bool Put_the_rest_of_stack(string& st, vector<string>& postfix) {
+    for (int i = st.size() - 1; i >= 0; --i) {
+        //  Если на вершине стека открывающая скобка, то в выражении пропущена скобка.
+        if (st[i] == '(') {
+            cout << "Wrong expression" << endl;
+            return false;
+        }
+        postfix.push_back(string(1, st[i]));
+    }
+    cout << endl;
+    return true;
+}
+
+bool Infix_To_Postfix(string& in, string& stack, vector<string>& postfix_, string& sub_str) {
+    for (int i = 0; i < in.size(); ++i) {
+        //1. Константы и переменные кладутся в формируемую запись
+        if (Is_number(in[i])) {     
+            if (!Add_number_to_Postfix(in, sub_str, i, postfix_)) {
+                cout << "Wrong format of number" << endl;
+                return false;
+            }
+        }
+        else if (Is_leter(in[i])) {
+            Add_variable_to_Postfix(in, sub_str, i, postfix_);
+        }
+        // 3. Открывающая скобка кладется в стек.
+        else if (in[i] == '(') {
+            stack.push_back(in[i]);
+        }
+        else if (Is_operation(in[i])) {
+            if (in[i] == '-') {
+                // Унарный минус
+                if (Is_Unar_Minus(in, i)) {
+                    in[i] = '~';
+                }
+                Add_operation(in, postfix_, stack, i);  
+            }
+            else {
+                Add_operation(in, postfix_, stack, i);  
+            }
+        }
         // 4. Закрывающая скобка выталкивает из стека в формируемую запись все операции до ближайшей открывающей скобки, открывающая
         //    скобка удаляется из стека.
-        if (c == ')') {  
-            auto it7 = find(stack.begin(), stack.end(), '(');
-
-            if (it7 != stack.end()) {
-                for (int i = stack.size() - 1; i >= 0; --i) {
-                    if (stack[i] != '(') {
-                        postfix.push_back(stack[i]);
-                    }
-                    else {
-                        stack = stack.erase(i, stack.size() - i);
-                        break;
-                    }
-                }
-            }
-            // Если стек закончился до того, как был встречен токен открывающая скобка, то в выражении пропущена скобка.
-            else {
-                cout << "Wrong expression" << endl;
-                return 1;
+        else if (in[i] == ')') {
+            if (!Push(stack, postfix_)) {
+                cout << "Wrong format (the number of left brackets is not equal the number of right brackets)" << endl;
+                return false;
             }
         }
-        else { // Если встретилось что-то кроме операндов, операций, констант или скобочек
-            cout << "Wrong expression" << endl; 
-            return 1;
-        }
-
-    }
-
-    // 5. После того, как мыдобрались до конца исходного выражения, операции, оставшиеся в стеке, перекладываются в формируемое выражение.
-    
-    for (int i = stack.size() - 1; i >= 0; --i) {
-        //  Если токен оператор на вершине стека — открывающая скобка, то в выражении пропущена скобка.
-        if (stack[i] == '(') {
+        else {
             cout << "Wrong expression" << endl;
-            return 1;
+            cout << "Unknown character: " << in[i] << endl;
+            return false;
         }
-        postfix.push_back(stack[i]);
     }
+    // 5. После того, как мыдобрались до конца исходного выражения, операции, оставшиеся в стеке, перекладываются в формируемое выражение.
+    if (!Put_the_rest_of_stack(stack, postfix_)) {
+        cout << "Wrong format (the number of left brackets is not equal the number of right brackets)" << endl;
+        return false;
+    }
+    return true;
+}
 
+bool Result_of_the_expr(vector<string>& postfix_) {
+    // Вычисление выражения по постфиксной записи: 
 
-    //cout << "Postfix form: " << endl;
-    //cout << postfix << endl;
-
-    cout << endl;
-
-    // Вычисление выражения по постфиксной записи и средствами программы: 
-    
     // 1. Обработка входного символа
     //    * Если на вход подан операнд, он помещается на вершину стека.
     //    * Если на вход подан знак операции, то соответствующая операция выполняется над требуемым количеством значений, извлечённых из стека, 
@@ -233,85 +234,92 @@ int main()
 
     vector<double> res_of_expr;
     double temp;
-    for (int i = 0; i < postfix.size(); ++i) {
-        if (postfix[i] >= 'a' && postfix[i] <= 'z' || postfix[i] >= 'A' && postfix[i] <= 'Z' || postfix[i] >= '1' && postfix[i] <= '9') {
-            res_of_expr.push_back(Map_for_chars[postfix[i]]); 
-        }
-        else if (postfix[i] == '+' || postfix[i] == '-' || postfix[i] == '*' || postfix[i] == '/') {
+    for (int i = 0; i < postfix_.size(); ++i) {
+        if (postfix_[i] == "+" || postfix_[i] == "-" || postfix_[i] == "*" || postfix_[i] == "/") {
             if (res_of_expr.size() == 1) {
-                cout << "Wrong format" << endl;
-                return 3;
+                cout << "Wrong format" << endl; //
+                return false;
             }
             try {
-                double temp_res = Operation(postfix[i], res_of_expr[res_of_expr.size() - 2], res_of_expr[res_of_expr.size() - 1]);
+                double temp_res = Operation(postfix_[i][0], res_of_expr[res_of_expr.size() - 2], res_of_expr[res_of_expr.size() - 1]);
                 res_of_expr.pop_back();
                 res_of_expr.pop_back();
                 res_of_expr.push_back(temp_res);
             }
             catch (const char* exception) {
                 cout << exception << endl;
-                return 2;
+                return false;
             }
         }
-        else if (postfix[i] == '~') {
+        else if (postfix_[i] == "~") {
             if (res_of_expr.size() == 0) {
-                cout << "Wrong format" << endl;
-                return 3;
+                cout << "Wrong format" << endl;     //
+                return false;
             }
             double temp_minus = UnMinus(res_of_expr[res_of_expr.size() - 1]);
             res_of_expr.pop_back();
             res_of_expr.push_back(temp_minus);
         }
-    }
- 
-    // для определения корректности в конце проверить, что размер стека равен 1
-    if (res_of_expr.size() == 1) {
-        if (number_of_const == 0) {
-            cout << "Postfix form: " << endl;
-            cout << postfix << endl;
-            cout << endl;
-
-            cout << "Result of expression: " << endl;
-            cout << res_of_expr.back() << endl;
-        }
         else {
-            for (int i = 0; i < postfix.size(); ++i) {
-                if (postfix[i] >= '1' && postfix[i] <= '9') {
-                    string substr = to_string(Map_for_chars[postfix[i]]);
-                    int j = substr.size() - 1;
-                    while (substr[j] == '0') {
-                        substr = substr.erase(j, 1);
-                        j--;
-                    }
-
-                    if (substr[substr.size() - 1] == '.') {
-                        substr = substr.erase(j, 1);
-                    }
-
-                    substr += ' ';
-
-                    postfix = postfix.erase(i, 1);
-                    std::copy(substr.begin(), substr.end(), std::inserter(postfix, postfix.begin() + i));
-                    //cout << "substr.size() = " << substr.size() << endl;
-                    i += substr.size()-1;
-                }
-            }
-            
-            cout << "Postfix form: " << endl;
-            cout << postfix << endl;
-            cout << endl;
-
-            cout << "Result of expression: " << endl;
-            cout << res_of_expr.back() << endl;
-
+            res_of_expr.push_back(atof(postfix_[i].c_str()));
         }
-        
+    }
+
+    // в конце проверить, что размер стека равен 1 (итоговое значение)
+    if (res_of_expr.size() == 1) {
+        cout << "Postfix form: " << endl;
+        for (const auto& c : postfix_) {
+            if (Is_operation(c[0])) {
+                cout << c << " ";
+            }
+            else {
+                cout << atof(c.c_str()) << " ";
+            }
+        }
+        cout << endl;
+        cout << "Result of expression: " << endl;
+        cout << res_of_expr.back() << endl;
+        return true;
     }
     else {
-        cout << "Wrong format" << endl;
+        cout << "Wrong format" << endl;     //
+        return false;
+    }
+}
+
+bool Solve() {
+    // Ввод исходново выражения
+    string input = "";
+    cout << "Enter the expression: " << endl;
+    cin >> input;
+
+    string stack = "";
+    vector<string> postfix_;
+    string sub_str;
+    if (!Infix_To_Postfix(input, stack, postfix_, sub_str)) {
+        return false;
+    }
+    else {
+        if (!Result_of_the_expr(postfix_)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+int main()
+{
+    // ОПЕРАНДАМИ МОГУТ БЫТЬ ЛИБО ИДЕНТИФИКАТОРЫ(из букв и цифр, первая обязательно буква), ЛИБО ВЕЩЕСТВЕННЫЕ КОНСТАНТЫ
+
+    if (!Solve()) {
+        cout << "End with error!" << endl;
         return 3;
     }
-    
-    return 0;
+    else {
+        cout << "End with succes!" << endl;
+        return 0;
+    }
 }
+
+// Разбить main на несколько функций (может быть поместить их в отдельный класс)
 
