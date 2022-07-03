@@ -9,7 +9,8 @@ using std::vector;
 using std::map;
 
 class Solve_case
-{private:
+{
+private:
     map<string, double> m;      // мапа для хранения значений переменных
     string input;               // входная инфиксная запись      
     string stack = "";          // стек для операций и скобок
