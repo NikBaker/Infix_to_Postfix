@@ -10,9 +10,16 @@ using std::endl;
 
 Solve_case::Solve_case() {
     m = {};
-    /*string stack = "";
-    vector<string> postfix_;
-    string sub_str;*/
+    string stack = "";
+    vector<string> postfix_ = {};
+    string sub_str = "";
+    input = "";
+}
+
+void Solve_case::Input() {
+    // Ввод исходново выражения
+    cout << "Enter the expression: " << endl;
+    cin >> input;
 }
 
 int Solve_case::Priority(const char& ch) {
@@ -55,28 +62,28 @@ bool Solve_case::Is_leter(const char& ch) {
     return (ch >= 'a' && ch <= 'z' || ch >= 'A' && ch <= 'Z');
 }
 
-bool Solve_case::Is_Unar_Minus(string& in, int& pos) {
-    return (in[pos] == in[0] || in[pos - 1] == '(' || in[pos - 1] == '+' || in[pos - 1] == '-' || in[pos - 1] == '*' || in[pos - 1] == '/');
+bool Solve_case::Is_Unar_Minus(int& pos) {
+    return (input[pos] == input[0] || input[pos - 1] == '(' || input[pos - 1] == '+' || input[pos - 1] == '-' || input[pos - 1] == '*' || input[pos - 1] == '/');
 }
 
 bool Solve_case::Is_operation(const char& ch) {
     return (ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '~');
 }
 
-bool Solve_case::Add_number_to_Postfix(string& in, string& sub, int& pos, vector<string>& postfix) {
-    if (Is_leter(in[pos + 1])) {    // проверка на правильность введенного идентификатора
+bool Solve_case::Add_number_to_Postfix(int& pos) {
+    if (Is_leter(input[pos + 1])) {    // проверка на правильность введенного идентификатора
         return false;
     }
     else {
-        sub.push_back(in[pos]);
+        sub_str.push_back(input[pos]);
         int number_of_dots = 0;
 
         int j = pos + 1;
-        while (in[j] == '.' || (in[j] >= '0' && in[j] <= '9')) {
-            if (in[j] == '.') {
+        while (input[j] == '.' || (input[j] >= '0' && input[j] <= '9')) {
+            if (input[j] == '.') {
                 number_of_dots++;
             }
-            sub.push_back(in[j]);
+            sub_str.push_back(input[j]);
             j++;
         }
         if (number_of_dots > 1) {
@@ -84,74 +91,74 @@ bool Solve_case::Add_number_to_Postfix(string& in, string& sub, int& pos, vector
             return false;
         }
         // Добавляем константу в формируемую запись
-        postfix.push_back(sub);
-        sub = "";
+        postfix_.push_back(sub_str);
+        sub_str = "";
         pos = j - 1; // перемещаемся на позицию после константы
         return true;
     }
 }
 
-void Solve_case::Add_variable_to_Postfix(string& in, string& sub, int& pos, vector<string>& postfix) {
-    sub.push_back(in[pos]);
+void Solve_case::Add_variable_to_Postfix(int& pos) {
+    sub_str.push_back(input[pos]);
     int j = pos + 1;
-    while ((in[j] >= '0' && in[j] <= '9') || (in[j] >= 'a' && in[j] <= 'z') || (in[j] >= 'A' && in[j] <= 'Z')) {
-        sub.push_back(in[j]);
+    while ((input[j] >= '0' && input[j] <= '9') || (input[j] >= 'a' && input[j] <= 'z') || (input[j] >= 'A' && input[j] <= 'Z')) {
+        sub_str.push_back(input[j]);
         j++;
     }
     // Добавляем значения переменных в формируемую запись
-    if (m.find(sub) == m.end()){    // если в выражении ещё не было такой переменной
+    if (m.find(sub_str) == m.end()){    // если в выражении ещё не было такой переменной
         double temp;
-        cout << "Enter the value for " << sub << ": ";
+        cout << "Enter the value for " << sub_str << ": ";
         cin >> temp;
-        m[sub] = temp;  //  добавляем в мапу значение для переменной
+        m[sub_str] = temp;  //  добавляем в мапу значение для переменной
     }
-    postfix.push_back(sub);     //
-    sub = "";
+    postfix_.push_back(sub_str);     //
+    sub_str = "";
     pos = j - 1; // перемещаемся на позицию после переменной
 }
 
-void Solve_case::Add_operation(string& in, vector<string>& postfix, string& st, int& pos) {
-    auto it11 = find(st.begin(), st.end(), '~');
-    auto it1 = find(st.begin(), st.end(), '+');
-    auto it2 = find(st.begin(), st.end(), '-');
-    auto it3 = find(st.begin(), st.end(), '*');
-    auto it4 = find(st.begin(), st.end(), '/');
+void Solve_case::Add_operation(int& pos) {
+    auto it11 = find(stack.begin(), stack.end(), '~');
+    auto it1 = find(stack.begin(), stack.end(), '+');
+    auto it2 = find(stack.begin(), stack.end(), '-');
+    auto it3 = find(stack.begin(), stack.end(), '*');
+    auto it4 = find(stack.begin(), stack.end(), '/');
 
     // 2.a) Если в стеке нет операций или верхним элементом стека является открывающая скобка, операция кладется в стек;
-    if ((it1 == st.end() && it2 == st.end() && it3 == st.end() && it4 == st.end() && it11 == st.end()) || (st[st.size() - 1] == '(')) {
-        st.push_back(in[pos]);
+    if ((it1 == stack.end() && it2 == stack.end() && it3 == stack.end() && it4 == stack.end() && it11 == stack.end()) || (stack[stack.size() - 1] == '(')) {
+        stack.push_back(input[pos]);
     }
     // 2.b) Если новая операция имеет больший приоритет, чем верхняя операция в стеке, то новая операция кладется в стек;
-    else if (Priority(in[pos]) > Priority(st[st.size() - 1])) {
-        st.push_back(in[pos]);
+    else if (Priority(input[pos]) > Priority(stack[stack.size() - 1])) {
+        stack.push_back(input[pos]);
     }
     // 2.c) Если новая операция имеет меньший или равный приоритет, чем верхняя операция в стеке, то операции, находящиеся в стеке,
     //      до ближайшей открывающей скобки или до операции с приоритетом меньшим, чем у новой операции, перекладываются в формируемую запись,
     //      а новая операция кладется в стек.
     else {
-        for (int j = st.size() - 1; j >= 0; --j) {
-            if (st[j] != '(' && (Priority(st[j]) >= Priority(in[pos]))) {
-                postfix.push_back(string(1, st[j]));
-                st = st.erase(j, 1);
+        for (int j = stack.size() - 1; j >= 0; --j) {
+            if (stack[j] != '(' && (Priority(stack[j]) >= Priority(input[pos]))) {
+                postfix_.push_back(string(1, stack[j]));
+                stack = stack.erase(j, 1);
             }
             else {
                 break;
             }
         }
-        st.push_back(in[pos]);
+        stack.push_back(input[pos]);
     }
 }
 
-bool Solve_case::Push(string& st, vector<string>& postfix) {
-    auto it = find(st.begin(), st.end(), '(');
+bool Solve_case::Push() {
+    auto it = find(stack.begin(), stack.end(), '(');
 
-    if (it != st.end()) {
-        for (int i = st.size() - 1; i >= 0; --i) {
-            if (st[i] != '(') {
-                postfix.push_back(string(1, st[i]));
+    if (it != stack.end()) {
+        for (int i = stack.size() - 1; i >= 0; --i) {
+            if (stack[i] != '(') {
+                postfix_.push_back(string(1, stack[i]));
             }
             else {
-                st = st.erase(i, st.size() - i);
+                stack = stack.erase(i, stack.size() - i);
                 break;
             }
         }
@@ -164,70 +171,70 @@ bool Solve_case::Push(string& st, vector<string>& postfix) {
     }
 }
 
-bool Solve_case::Put_the_rest_of_stack(string& st, vector<string>& postfix) {
-    for (int i = st.size() - 1; i >= 0; --i) {
+bool Solve_case::Put_the_rest_of_stack() {
+    for (int i = stack.size() - 1; i >= 0; --i) {
         //  Если на вершине стека открывающая скобка, то в выражении пропущена скобка.
-        if (st[i] == '(') {
+        if (stack[i] == '(') {
             cout << "Wrong expression" << endl;
             return false;
         }
-        postfix.push_back(string(1, st[i]));
+        postfix_.push_back(string(1, stack[i]));
     }
     cout << endl;
     return true;
 }
 
-bool Solve_case::Infix_To_Postfix(string& in, string& stack, vector<string>& postfix_, string& sub_str) {
-    for (int i = 0; i < in.size(); ++i) {
+bool Solve_case::Infix_To_Postfix() {
+    for (int i = 0; i < input.size(); ++i) {
         //1. Константы и переменные кладутся в формируемую запись
-        if (Is_number(in[i])) {
-            if (!Add_number_to_Postfix(in, sub_str, i, postfix_)) {
+        if (Is_number(input[i])) {
+            if (!Add_number_to_Postfix(i)) {
                 cout << "Wrong format of number" << endl;
                 return false;
             }
         }
-        else if (Is_leter(in[i])) {
-            Add_variable_to_Postfix(in, sub_str, i, postfix_);
+        else if (Is_leter(input[i])) {
+            Add_variable_to_Postfix(i);
         }
         // 3. Открывающая скобка кладется в стек.
-        else if (in[i] == '(') {
-            stack.push_back(in[i]);
+        else if (input[i] == '(') {
+            stack.push_back(input[i]);
         }
-        else if (Is_operation(in[i])) {
-            if (in[i] == '-') {
+        else if (Is_operation(input[i])) {
+            if (input[i] == '-') {
                 // Унарный минус
-                if (Is_Unar_Minus(in, i)) {
-                    in[i] = '~';
+                if (Is_Unar_Minus(i)) {
+                    input[i] = '~';
                 }
-                Add_operation(in, postfix_, stack, i);
+                Add_operation(i);
             }
             else {
-                Add_operation(in, postfix_, stack, i);
+                Add_operation(i);
             }
         }
         // 4. Закрывающая скобка выталкивает из стека в формируемую запись все операции до ближайшей открывающей скобки, открывающая
         //    скобка удаляется из стека.
-        else if (in[i] == ')') {
-            if (!Push(stack, postfix_)) {
+        else if (input[i] == ')') {
+            if (!Push()) {
                 cout << "Wrong format (the number of left brackets is not equal the number of right brackets)" << endl;
                 return false;
             }
         }
         else {
             cout << "Wrong expression" << endl;
-            cout << "Unknown character: " << in[i] << endl;
+            cout << "Unknown character: " << input[i] << endl;
             return false;
         }
     }
     // 5. После того, как мыдобрались до конца исходного выражения, операции, оставшиеся в стеке, перекладываются в формируемое выражение.
-    if (!Put_the_rest_of_stack(stack, postfix_)) {
+    if (!Put_the_rest_of_stack()) {
         cout << "Wrong format (the number of left brackets is not equal the number of right brackets)" << endl;
         return false;
     }
     return true;
 }
 
-bool Solve_case::Result_of_the_expr(vector<string>& postfix_) {
+bool Solve_case::Result_of_the_expr() {
     // Вычисление выражения по постфиксной записи: 
 
     // 1. Обработка входного символа
@@ -288,11 +295,6 @@ bool Solve_case::Result_of_the_expr(vector<string>& postfix_) {
                 else {
                     cout << atof(c.c_str()) << " ";
                 }
-                /*auto it = find(m.begin(), m.end(), c);
-                if (it != m.end()) {
-                    
-                }*/
-                
             }
         }
         cout << endl;
@@ -301,32 +303,17 @@ bool Solve_case::Result_of_the_expr(vector<string>& postfix_) {
         return true;
     }
     else {
-        cout << "Wrong format" << endl;     //
+        cout << "Wrong format" << endl;  
         return false;
     }
 }
 
-//void Solve_case::Input() {
-//    // Ввод исходново выражения
-//    input = "";
-//    cout << "Enter the expression: " << endl;
-//    cin >> input;
-//}
-
 bool Solve_case::Solve() {
-    // Ввод исходново выражения
-    string input = "";
-    cout << "Enter the expression: " << endl;
-    cin >> input;
-
-    string stack = "";
-    vector<string> postfix_;
-    string sub_str;
-    if (!Infix_To_Postfix(input, stack, postfix_, sub_str)) {
+    if (!Infix_To_Postfix()) {
         return false;
     }
     else {
-        if (!Result_of_the_expr(postfix_)) {
+        if (!Result_of_the_expr()) {
             return false;
         }
     }
