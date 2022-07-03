@@ -8,6 +8,13 @@ using std::cout;
 using std::cin;
 using std::endl;
 
+Solve_case::Solve_case() {
+    m = {};
+    /*string stack = "";
+    vector<string> postfix_;
+    string sub_str;*/
+}
+
 int Solve_case::Priority(const char& ch) {
     if (ch == '+' || ch == '-') {
         return 1;
@@ -92,10 +99,13 @@ void Solve_case::Add_variable_to_Postfix(string& in, string& sub, int& pos, vect
         j++;
     }
     // ƒобавл€ем значени€ переменных в формируемую запись
-    double temp;
-    cout << "Enter the value for " << sub << ": ";
-    cin >> temp;
-    postfix.push_back(to_string(temp));
+    if (m.find(sub) == m.end()){    // если в выражении ещЄ не было такой переменной
+        double temp;
+        cout << "Enter the value for " << sub << ": ";
+        cin >> temp;
+        m[sub] = temp;  //  добавл€ем в мапу значение дл€ переменной
+    }
+    postfix.push_back(sub);     //
     sub = "";
     pos = j - 1; // перемещаемс€ на позицию после переменной
 }
@@ -149,7 +159,7 @@ bool Solve_case::Push(string& st, vector<string>& postfix) {
     }
     // ≈сли стек закончилс€ до того, как был встречен токен открывающа€ скобка, то в выражении пропущена скобка.
     else {
-        //cout << "Wrong expression" << endl;
+        cout << "Wrong expression" << endl;
         return false;
     }
 }
@@ -255,7 +265,12 @@ bool Solve_case::Result_of_the_expr(vector<string>& postfix_) {
             res_of_expr.push_back(temp_minus);
         }
         else {
-            res_of_expr.push_back(atof(postfix_[i].c_str()));
+            if (m.find(postfix_[i]) != m.end()) {
+                res_of_expr.push_back(m[postfix_[i]]);
+            }
+            else {
+                res_of_expr.push_back(atof(postfix_[i].c_str()));
+            }            
         }
     }
 
@@ -267,7 +282,17 @@ bool Solve_case::Result_of_the_expr(vector<string>& postfix_) {
                 cout << c << " ";
             }
             else {
-                cout << atof(c.c_str()) << " ";
+                if (m.find(c) != m.end()) {
+                    cout << c << " ";
+                }
+                else {
+                    cout << atof(c.c_str()) << " ";
+                }
+                /*auto it = find(m.begin(), m.end(), c);
+                if (it != m.end()) {
+                    
+                }*/
+                
             }
         }
         cout << endl;
@@ -280,6 +305,13 @@ bool Solve_case::Result_of_the_expr(vector<string>& postfix_) {
         return false;
     }
 }
+
+//void Solve_case::Input() {
+//    // ¬вод исходново выражени€
+//    input = "";
+//    cout << "Enter the expression: " << endl;
+//    cin >> input;
+//}
 
 bool Solve_case::Solve() {
     // ¬вод исходново выражени€

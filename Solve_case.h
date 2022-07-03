@@ -10,8 +10,13 @@ using std::map;
 
 class Solve_case
 {private:
-    map<string, double> m;  // мапа для хранения значений переменных
+    map<string, double> m;      // мапа для хранения значений переменных
+    //string input;               // входная инфиксная запись      
+    //string stack = "";          // стек для операций и скобок
+    //vector<string> postfix_;    // постфиксная запись
+    //string sub_str;             
 private:
+    void Input();
     // Приоритет операции
     int Priority(const char& ch);
     // Результат операции ch над двумя операндами a И b
@@ -36,9 +41,7 @@ private:
     bool Result_of_the_expr(vector<string>& postfix_);
 
 public:
-    Solve_case() {
-        m = {};
-    }
+    Solve_case();
     bool Solve();
 };
 

@@ -9,7 +9,7 @@ using std::endl;
 
 int main()
 {
-    /*for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 10; ++i) {
         Solve_case Case;
         if (!Case.Solve()) {
             cout << "End with error!" << endl;
@@ -18,9 +18,7 @@ int main()
             cout << "End with succes!" << endl;
         }
         cout << endl;
-    }*/
-    
-    
+    }
 
     /*
     Solve_case Case;
